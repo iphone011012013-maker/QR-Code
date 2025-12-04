@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ABO-ELFADL OS V9.0 | ULTIMATE</title>
+    
+    <!-- Tailwind CSS (Framework) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts (Typography) -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome (Icons) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Core Libraries -->
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <style>
+        /* --- MAIN THEME SETUP --- */
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: #050505;
+            color: #e0e0e0;
+            /* Cyberpunk Texture Background */
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(220, 38, 38, 0.05) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.05) 0%, transparent 20%),
+                url('https://www.transparenttextures.com/patterns/carbon-fibre.png');
+            overflow-x: hidden;
+            padding-bottom: 80px;
+        }
+        
+        /* Font for Code/Numbers */
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+
+        /* Glassmorphism Panel */
+        .glass-panel {
+            background: rgba(12, 12, 12, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+        }
+
+        /* --- CONTROLS STYLING --- */
+        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none; height: 18px; width: 18px; border-radius: 50%;
+            background: #dc2626; margin-top: -7px; border: 2px solid white; cursor: pointer;
+            box-shadow: 0 0 10px rgba(220, 38, 38, 0.5);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%; height: 4px; cursor: pointer; background: #333; border-radius: 2px;
+        }
+
+        /* Input Fields */
+        .cyber-input { background: #000; border: 1px solid #333; color: white; transition: all 0.3s; }
+        .cyber-input:focus { border-color: #dc2626; box-shadow: 0 0 15px rgba(220, 38, 38, 0.2); outline: none; }
+
+        /* Tabs */
+        .tab-active { border-bottom: 2px solid #dc2626; color: white; background: linear-gradient(to top, rgba(220,38,38,0.1), transparent); }
+        .tab-inactive { color: #6b7280; border-bottom: 2px solid transparent; }
+        
+        /* Hardware UI Overlay Animation */
+        .hw-overlay { opacity: 0; pointer-events: none; transition: opacity 0.3s ease-in-out; }
+        .hw-overlay.active { opacity: 1; pointer-events: auto; }
+        
+        /* Fix for QR rendering in Screenshot */
+        #qrcode-output img, #qrcode-output canvas { 
+            margin: 0 auto; 
+            display: block; 
+            border: 4px solid white; 
+            border-radius: 4px; 
+        }
+
+        /* Pulse Animations */
+        @keyframes scan-pulse {
+            0%, 100% { box-shadow: 0 0 20px rgba(220,38,38,0.2); border-color: rgba(220,38,38,0.5); }
+            50% { box-shadow: 0 0 40px rgba(220,38,38,0.5); border-color: rgba(220,38,38,1); }
+        }
+        .scan-active { animation: scan-pulse 2s infinite; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center p-3 sm:p-4">
+
+    <!-- HEADER SECTION -->
+    <div class="w-full max-w-md flex justify-between items-center mb-5 border-b border-zinc-800 pb-3">
+        <div class="flex items-center gap-3">
+            <!-- Animated Logo Container -->
+            <div class="w-12 h-12 bg-zinc-900 rounded-xl border border-red-900/50 flex items-center justify-center text-red-500 shadow-lg relative overflow-hidden group">
+                <div class="absolute inset-0 bg-red-600/10 group-hover:bg-red-600/20 transition duration-500"></div>
+                <i class="fa-solid fa-shield-cat text-2xl"></i> <!-- Changed Icon to Shield Cat for Security -->
+            </div>
+            <div>
+                <h1 class="text-lg font-bold text-white leading-none">ABO-ELFADL <span class="text-red-600">OS</span></h1>
+                <p class="text-[10px] text-gray-500 font-mono mt-1 font-bold">V9.0 | ULTIMATE EDITION</p>
+            </div>
+        </div>
+        <!-- Voice Control Toggle -->
+        <button id="voice-btn" onclick="toggleVoice()" class="text-gray-500 hover:text-white transition text-[10px] font-bold border border-zinc-800 px-3 py-1.5 rounded-full bg-zinc-900/50 flex items-center gap-2">
+            <i class="fa-solid fa-volume-xmark"></i>
+        </button>
+    </div>
+
+    <!-- MAIN INTERFACE PANEL -->
+    <div class="w-full max-w-md glass-panel rounded-2xl overflow-hidden mb-6 relative border-t-2 border-t-red-600 shadow-2xl">
+        
+        <!-- Navigation Tabs -->
+        <div class="flex border-b border-zinc-800">
+            <button onclick="switchTab('camera')" id="tab-camera" class="flex-1 py-4 text-xs font-bold tab-active transition-all duration-300">
+                <i class="fa-solid fa-camera"></i> فحص
+            </button>
+            <button onclick="switchTab('create')" id="tab-create" class="flex-1 py-4 text-xs font-bold tab-inactive hover:text-white transition-all duration-300">
+                <i class="fa-solid fa-pen-ruler"></i> إنشاء
+            </button>
+            <button onclick="switchTab('file')" id="tab-file" class="flex-1 py-4 text-xs font-bold tab-inactive hover:text-white transition-all duration-300">
+                <i class="fa-solid fa-image"></i> ملف
+            </button>
+        </div>
+
+        <!-- === SECTION 1: CAMERA SCANNER === -->
+        <div id="section-camera" class="relative min-h-[380px] bg-black">
+            <div class="relative h-80 w-full overflow-hidden bg-black">
+                <!-- Camera Viewport -->
+                <div id="reader" class="w-full h-full object-cover"></div>
+                
+                <!-- Hardware Controls Overlay (Flash & Zoom) -->
+                <div id="hw-controls" class="hw-overlay absolute bottom-0 left-0 right-0 p-4 pb-16 bg-gradient-to-t from-black/90 via-black/50 to-transparent z-20 flex flex-col justify-end">
+                    <div class="flex items-center gap-3">
+                        <button onclick="toggleTorch()" id="btn-flash" class="w-10 h-10 rounded-full bg-zinc-800/80 border border-zinc-600 text-white flex items-center justify-center hover:bg-yellow-600 hover:border-yellow-400 hover:text-black transition disabled:opacity-30 disabled:cursor-not-allowed">
+                            <i class="fa-solid fa-bolt"></i>
+                        </button>
+                        <div class="flex-1 bg-zinc-800/80 rounded-full px-3 py-2 border border-zinc-600 flex items-center gap-2">
+                            <i class="fa-solid fa-magnifying-glass-minus text-[10px] text-gray-400"></i>
+                            <input type="range" id="zoom-slider" min="1" max="5" step="0.1" value="1" oninput="setZoom(this.value)" disabled class="disabled:opacity-30">
+                            <i class="fa-solid fa-magnifying-glass-plus text-[10px] text-gray-400"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Scanning Visuals -->
+                <div id="scan-frame" class="absolute inset-10 border-2 border-red-500/50 rounded-lg hidden pointer-events-none z-10 box-border scan-active">
+                    <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full h-[1px] bg-red-500/50 shadow-[0_0_10px_#ef4444]"></div>
+                </div>
+
+                <!-- Offline Placeholder -->
+                <div id="cam-placeholder" class="absolute inset-0 flex flex-col items-center justify-center text-gray-600 bg-zinc-950 z-30">
+                    <div class="w-20 h-20 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center mb-4 animate-pulse">
+                        <i class="fa-solid fa-power-off text-3xl opacity-40"></i>
+                    </div>
+                    <span class="text-[10px] font-mono tracking-widest uppercase font-bold text-gray-500">System Standby</span>
+                </div>
+            </div>
+
+            <!-- Main Toggle Button -->
+            <div class="absolute bottom-5 left-1/2 transform -translate-x-1/2 w-3/4 z-40">
+                <button onclick="toggleCam()" id="cam-btn" class="w-full bg-red-700 hover:bg-red-600 text-white py-3.5 rounded-xl font-bold font-mono text-xs transition shadow-[0_0_20px_rgba(220,38,38,0.4)] flex justify-center items-center gap-2 border border-red-500">
+                    <i class="fa-solid fa-play"></i> تشغيل النظام
+                </button>
+            </div>
+        </div>
+
+        <!-- === SECTION 2: QR GENERATOR === -->
+        <div id="section-create" class="hidden p-5 min-h-[350px]">
+            <!-- Type Selector -->
+            <div class="flex gap-2 mb-5 bg-zinc-900/80 p-1.5 rounded-xl border border-zinc-800">
+                <button onclick="setGenType('text')" id="btn-gen-text" class="flex-1 py-2 text-[10px] font-bold rounded-lg bg-red-600 text-white shadow-lg transition-all">نص / رابط</button>
+                <button onclick="setGenType('wifi')" id="btn-gen-wifi" class="flex-1 py-2 text-[10px] font-bold rounded-lg text-gray-400 hover:text-white transition-all">شبكة Wi-Fi</button>
+            </div>
+
+            <!-- Text Form -->
+            <div id="form-text" class="space-y-4 animate-fade-in">
+                <div class="space-y-1">
+                    <label class="text-[10px] text-gray-500 font-bold px-1 uppercase tracking-wider">المحتوى المستهدف</label>
+                    <input type="text" id="inp-text" placeholder="https://example.com" class="w-full p-3.5 rounded-lg cyber-input text-xs font-mono">
+                </div>
+            </div>
+
+            <!-- WiFi Form -->
+            <div id="form-wifi" class="hidden space-y-3 animate-fade-in">
+                <div class="space-y-1">
+                    <label class="text-[10px] text-gray-500 font-bold px-1">SSID (اسم الشبكة)</label>
+                    <input type="text" id="inp-ssid" placeholder="Network Name" class="w-full p-3.5 rounded-lg cyber-input text-xs font-mono">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-[10px] text-gray-500 font-bold px-1">Password (كلمة المرور)</label>
+                    <input type="text" id="inp-pass" placeholder="Password" class="w-full p-3.5 rounded-lg cyber-input text-xs font-mono">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-[10px] text-gray-500 font-bold px-1">Encryption (التشفير)</label>
+                    <select id="inp-enc" class="w-full p-3.5 rounded-lg cyber-input text-xs font-mono cursor-pointer">
+                        <option value="WPA">WPA/WPA2 (Secure)</option>
+                        <option value="WEP">WEP</option>
+                        <option value="nopass">Open (No Password)</option>
+                    </select>
+                </div>
+            </div>
+
+            <button onclick="generateQR()" class="w-full mt-6 bg-white text-black hover:bg-gray-200 py-3.5 rounded-xl font-bold text-xs flex justify-center items-center gap-2 transition shadow-[0_0_15px_rgba(255,255,255,0.1)]">
+                <i class="fa-solid fa-microchip"></i> معالجة وإنشاء الرمز
+            </button>
+            
+            <!-- Result Area -->
+            <div id="gen-result" class="hidden mt-8 text-center">
+                <div class="relative inline-block group" id="qrcode-container">
+                    <div class="bg-white p-4 rounded-xl shadow-[0_0_30px_rgba(255,255,255,0.15)] transition-transform transform group-hover:scale-105 duration-300">
+                        <div id="qrcode-output"></div>
+                    </div>
+                    <!-- Overlay Download Button -->
+                    <div class="absolute inset-0 bg-black/80 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 rounded-xl cursor-pointer backdrop-blur-sm" onclick="downloadQRSafe()">
+                        <div class="text-center transform translate-y-2 group-hover:translate-y-0 transition duration-300">
+                            <i class="fa-solid fa-download text-2xl text-red-500 mb-2"></i>
+                            <p class="text-white text-[10px] font-bold font-mono">تحميل آمن</p>
+                        </div>
+                    </div>
+                </div>
+                <p class="text-[10px] text-gray-500 mt-3 font-mono">ABO-ELFADL ENCRYPTED GENERATION</p>
+            </div>
+        </div>
+
+        <!-- === SECTION 3: FILE UPLOAD === -->
+        <div id="section-file" class="hidden p-5 min-h-[350px] flex flex-col items-center justify-center">
+             <div class="w-full h-56 border-2 border-dashed border-zinc-700 hover:border-red-600 hover:bg-zinc-900/60 rounded-xl flex flex-col items-center justify-center cursor-pointer transition-all duration-300 bg-zinc-900/30 group" onclick="document.getElementById('qr-file-inp').click()">
+                <input type="file" id="qr-file-inp" accept="image/*" class="hidden" onchange="handleFile(this)">
+                <div class="w-20 h-20 rounded-full bg-zinc-800 flex items-center justify-center mb-4 text-zinc-500 group-hover:text-red-500 group-hover:scale-110 transition duration-300 shadow-lg">
+                    <i class="fa-solid fa-folder-tree text-3xl"></i>
+                </div>
+                <h3 class="text-xs text-gray-300 font-bold mb-1">رفع ملف للتحليل</h3>
+                <span class="text-[9px] text-gray-500 font-mono">Supports: PNG, JPG, JPEG</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- === REPORT PANEL (FORENSIC DATA) === -->
+    <div id="report-panel" class="w-full max-w-md hidden animate-fade-in-up">
+        <div id="evidence-card" class="bg-[#080808] rounded-2xl p-6 border border-zinc-800 relative overflow-hidden shadow-[0_10px_50px_rgba(0,0,0,0.9)]">
+            
+            <!-- Report Header -->
+            <div class="flex justify-between items-start mb-6 border-b border-zinc-800 pb-4">
+                <div class="flex items-center gap-3">
+                     <i class="fa-solid fa-fingerprint text-red-600 text-3xl"></i>
+                     <div>
+                         <h2 class="text-sm font-black text-white uppercase tracking-wider">تقرير جنائي</h2>
+                         <p class="text-[9px] text-gray-500 font-mono">ABO-ELFADL SECURITY UNIT</p>
+                     </div>
+                </div>
+                <div class="text-right">
+                    <div class="border border-red-900/50 bg-red-950/20 text-red-500 text-[8px] px-2 py-0.5 rounded font-bold uppercase mb-1 tracking-widest">Confidential</div>
+                    <div id="timestamp" class="text-[9px] text-gray-500 font-mono">00:00:00</div>
+                </div>
+            </div>
+
+            <!-- WiFi Data Layout -->
+            <div id="layout-wifi" class="hidden">
+                <div class="mb-5">
+                    <p class="text-[9px] text-gray-500 uppercase font-bold mb-1.5 tracking-wider">Target Network (SSID)</p>
+                    <p id="wifi-ssid" class="text-white font-mono font-bold text-lg bg-zinc-900 p-3 rounded-lg border border-zinc-800 flex items-center gap-2">
+                        <i class="fa-solid fa-wifi text-xs text-gray-600"></i> <span class="break-all">Unknown</span>
+                    </p>
+                </div>
+                <div class="mb-5">
+                    <div class="flex justify-between items-end mb-1.5">
+                        <p class="text-[9px] text-gray-500 uppercase font-bold tracking-wider">Access Key</p>
+                        <button onclick="copyWifiPass()" class="text-[9px] bg-red-600 text-white px-2.5 py-1 rounded hover:bg-red-500 transition flex items-center gap-1.5 font-bold">
+                            <i class="fa-solid fa-copy"></i> نسخ
+                        </button>
+                    </div>
+                    <p id="wifi-pass" class="text-red-500 font-mono font-bold text-xl bg-red-950/10 p-3 rounded-lg border border-red-900/30 break-all select-all">********</p>
+                </div>
+                <!-- Security Meter -->
+                <div class="bg-zinc-900/50 p-3 rounded-lg border border-zinc-800">
+                    <div class="flex justify-between text-[9px] text-gray-400 mb-1.5">
+                        <span class="font-bold">Brute Force Resistance</span>
+                        <span id="crack-time" class="text-white font-bold font-mono">Calculating...</span>
+                    </div>
+                    <div class="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                        <div id="strength-bar" class="h-full bg-red-600 w-0 transition-all duration-1000"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- URL/Text Data Layout -->
+            <div id="layout-link" class="hidden">
+                 <div class="bg-zinc-900/50 p-4 rounded-lg border border-zinc-800 mb-4">
+                    <p class="text-[9px] text-gray-500 uppercase font-bold mb-2 tracking-wider"><i class="fa-solid fa-database mr-1"></i> Decrypted Payload</p>
+                    <p id="link-content" class="text-xs text-blue-400 font-mono break-all dir-ltr font-bold leading-relaxed select-all"></p>
+                </div>
+                <button onclick="checkVirusTotal()" class="w-full bg-blue-900/20 hover:bg-blue-900/30 text-blue-400 py-3 rounded-lg text-xs font-bold border border-blue-900/40 transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-shield-virus"></i> فحص أمني (VirusTotal)
+                </button>
+            </div>
+        </div>
+
+        <!-- Action Grid -->
+        <div class="grid grid-cols-2 gap-3 mt-4">
+            <button onclick="sharePDFReport()" class="col-span-2 bg-gradient-to-r from-red-900/80 to-red-800/80 hover:from-red-800 hover:to-red-700 text-white py-3.5 rounded-xl text-xs font-bold flex justify-center items-center gap-2 border border-red-700/50 transition shadow-lg">
+                <i class="fa-solid fa-file-pdf"></i> تصدير تقرير جنائي (PDF)
+            </button>
+            <button onclick="shareImageEvidence()" class="bg-zinc-800 hover:bg-zinc-700 text-white py-3.5 rounded-xl text-xs font-bold flex justify-center items-center gap-2 border border-zinc-700 transition">
+                <i class="fa-solid fa-image"></i> مشاركة صورة
+            </button>
+            <button onclick="resetApp()" class="bg-zinc-800 hover:bg-zinc-700 text-gray-400 py-3.5 rounded-xl text-xs font-bold flex justify-center items-center gap-2 border border-zinc-700 transition">
+                <i class="fa-solid fa-rotate"></i> مسح جديد
+            </button>
+        </div>
+    </div>
+
+    <!-- === SAFETY GATE (PHISHING PROTECTION) === -->
+    <div id="safety-gate" class="fixed inset-0 hidden flex items-center justify-center p-4 backdrop-blur-xl z-50 bg-black/40">
+        <div class="w-full max-w-sm bg-[#0a0a0a] border border-red-600/50 rounded-2xl p-6 relative shadow-[0_0_50px_rgba(220,38,38,0.4)] transform transition-all scale-100">
+            <!-- Alert Icon -->
+            <div class="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-red-600 text-white w-16 h-16 rounded-full flex items-center justify-center border-4 border-[#0a0a0a] text-3xl shadow-xl animate-bounce">
+                <i class="fa-solid fa-hand-paper"></i>
+            </div>
+            
+            <h3 class="text-center text-white font-black text-lg mt-8 mb-1">بوابة الحماية النشطة</h3>
+            <p class="text-center text-gray-400 text-xs mb-6 font-mono">تم اعتراض محاولة اتصال خارجي</p>
+            
+            <div class="bg-zinc-900 p-4 rounded-xl border border-zinc-800 mb-6 text-left relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-1 h-full bg-red-600"></div>
+                <p class="text-[9px] text-gray-500 uppercase mb-2 font-bold tracking-wider">الوجهة المقصودة:</p>
+                <p id="gate-url" class="text-xs text-red-400 font-mono break-all font-bold select-all"></p>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-3">
+                <button onclick="document.getElementById('safety-gate').classList.add('hidden')" class="bg-zinc-800 hover:bg-zinc-700 text-white py-3 rounded-lg text-xs font-bold transition">إلغاء الأمر</button>
+                <button onclick="window.open(document.getElementById('gate-url').innerText, '_blank'); document.getElementById('safety-gate').classList.add('hidden')" class="bg-red-700 hover:bg-red-600 text-white py-3 rounded-lg text-xs font-bold transition shadow-[0_0_15px_rgba(220,38,38,0.3)]">
+                    <i class="fa-solid fa-external-link-alt mr-1"></i> فتح (على مسؤوليتي)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // === CORE SYSTEM VARIABLES ===
+        const { jsPDF } = window.jspdf;
+        let voiceActive = false;
+        const synth = window.speechSynthesis;
+        let genType = 'text';
+        let track = null;
+        let isScanning = false;
+        
+        // --- VOICE ASSISTANT (JARVIS STYLE) ---
+        function toggleVoice() {
+            voiceActive = !voiceActive;
+            const btn = document.getElementById('voice-btn');
+            if(voiceActive) {
+                btn.innerHTML = '<i class="fa-solid fa-volume-high"></i>';
+                btn.className = "text-red-500 border border-red-500 px-3 py-1.5 rounded-full bg-red-900/20 transition-all shadow-[0_0_10px_rgba(220,38,38,0.3)]";
+                speak("النظام الصوتي مفعل. جاهز للأوامر.");
+            } else {
+                btn.innerHTML = '<i class="fa-solid fa-volume-xmark"></i>';
+                btn.className = "text-gray-500 border border-zinc-800 px-3 py-1.5 rounded-full bg-zinc-900/50 transition-all";
+            }
+        }
+        
+        function speak(text) {
+            if(!voiceActive || !synth) return;
+            synth.cancel(); // Stop previous speech
+            const utter = new SpeechSynthesisUtterance(text);
+            utter.lang = 'ar-SA'; // Arabic Accent
+            utter.rate = 1.1; // Slightly faster for "AI" feel
+            utter.pitch = 0.9; // Slightly deeper
+            synth.speak(utter);
+        }
+
+        // --- NAVIGATION LOGIC ---
+        function switchTab(t) {
+            // Hide all sections
+            ['camera', 'create', 'file'].forEach(tab => {
+                document.getElementById(`section-${tab}`).classList.add('hidden');
+                document.getElementById(`tab-${tab}`).className = "flex-1 py-4 text-xs font-bold tab-inactive hover:text-white transition-all duration-300";
+            });
+            // Show target section
+            document.getElementById(`section-${t}`).classList.remove('hidden');
+            document.getElementById(`tab-${t}`).className = "flex-1 py-4 text-xs font-bold tab-active transition-all duration-300";
+            
+            // Auto-stop camera if leaving camera tab
+            if (t !== 'camera' && isScanning) {
+                toggleCam();
+            }
+            
+            // Hide report panel when switching tabs for cleaner UI
+            if (t === 'camera') {
+                document.getElementById('report-panel').classList.add('hidden');
+            }
+        }
+
+        // --- CAMERA & SCANNER LOGIC (ROBUST V9) ---
+        const html5QrCode = new Html5Qrcode("reader");
+
+        function toggleCam() {
+            const btn = document.getElementById('cam-btn');
+            const placeholder = document.getElementById('cam-placeholder');
+            const frame = document.getElementById('scan-frame');
+            const hwControls = document.getElementById('hw-controls');
+
+            if(!isScanning) {
+                // START SCANNING
+                placeholder.classList.add('hidden');
+                frame.classList.remove('hidden');
+                btn.innerHTML = '<i class="fa-solid fa-stop-circle"></i> إنهاء الجلسة';
+                btn.classList.replace('bg-red-700', 'bg-zinc-800');
+                btn.classList.add('border-zinc-600');
+                btn.classList.remove('border-red-500');
+                
+                html5QrCode.start(
+                    { facingMode: "environment" }, 
+                    { fps: 15, qrbox: 250, aspectRatio: 1.0 }, 
+                    onScanSuccess
+                )
+                .then(() => { 
+                    isScanning = true; 
+                    speak("تم تفعيل الكاميرا. جاري المسح."); 
+                    hwControls.classList.add('active'); 
+                    initHardware(); // Initialize Zoom/Flash
+                })
+                .catch(err => { 
+                    console.error(err); 
+                    alert("خطأ: تعذر الوصول للكاميرا. تأكد من الأذونات."); 
+                });
+            } else {
+                // STOP SCANNING
+                html5QrCode.stop().then(() => {
+                    isScanning = false;
+                    frame.classList.add('hidden');
+                    placeholder.classList.remove('hidden');
+                    hwControls.classList.remove('active');
+                    btn.innerHTML = '<i class="fa-solid fa-play"></i> تشغيل النظام';
+                    btn.classList.replace('bg-zinc-800', 'bg-red-700');
+                    btn.classList.remove('border-zinc-600');
+                    btn.classList.add('border-red-500');
+                    track = null; // Reset hardware track
+                }).catch(err => console.error("Stop failed", err));
+            }
+        }
+
+        function onScanSuccess(text) {
+            if(isScanning) toggleCam(); // Auto stop on success
+            
+            playBeepSound(); // Audio feedback
+            
+            // Populate Report
+            const reportPanel = document.getElementById('report-panel');
+            reportPanel.classList.remove('hidden');
+            document.getElementById('timestamp').innerText = new Date().toLocaleTimeString('ar-EG');
+            
+            // Reset Layouts
+            document.getElementById('layout-wifi').classList.add('hidden');
+            document.getElementById('layout-link').classList.add('hidden');
+
+            // Analyze Content
+            if (text.startsWith("WIFI:")) {
+                // Parse WiFi String format: WIFI:S:MySSID;T:WPA;P:MyPass;;
+                const ssid = (text.match(/S:(.*?);/) || [])[1] || "N/A";
+                const pass = (text.match(/P:(.*?);/) || [])[1] || "";
+                
+                document.getElementById('layout-wifi').classList.remove('hidden');
+                document.getElementById('wifi-ssid').innerText = ssid;
+                document.getElementById('wifi-pass').innerText = pass;
+                calcStrength(pass); // Calculate Brute Force time
+                speak("تم استخراج بيانات الشبكة بنجاح.");
+            } else {
+                document.getElementById('layout-link').classList.remove('hidden');
+                document.getElementById('link-content').innerText = text;
+                
+                // Safety Check for URLs
+                if (text.startsWith('http')) {
+                    document.getElementById('safety-gate').classList.remove('hidden');
+                    document.getElementById('gate-url').innerText = text;
+                    speak("تحذير أمني. تم اكتشاف رابط خارجي.");
+                } else {
+                    speak("تم تحليل النص.");
+                }
+            }
+            
+            // Smooth Scroll to Report
+            reportPanel.scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        function playBeepSound() {
+            // Simple beep using AudioContext or just assume user knows scan finished
+            // Adding a small vibration if mobile
+            if (navigator.vibrate) navigator.vibrate(200);
+        }
+
+        // --- HARDWARE CONTROLS (Zoom & Flash) ---
+        function initHardware() {
+            setTimeout(() => {
+                const videoElement = document.querySelector("#reader video");
+                if (videoElement && videoElement.srcObject) {
+                    const videoTrack = videoElement.srcObject.getVideoTracks()[0];
+                    if (videoTrack) {
+                        track = videoTrack;
+                        const capabilities = track.getCapabilities();
+
+                        // Configure Zoom Slider
+                        const zoomSlider = document.getElementById('zoom-slider');
+                        if ('zoom' in capabilities) {
+                            zoomSlider.disabled = false;
+                            zoomSlider.min = capabilities.zoom.min;
+                            zoomSlider.max = capabilities.zoom.max;
+                            zoomSlider.step = capabilities.zoom.step;
+                            zoomSlider.value = track.getSettings().zoom || 1;
+                        } else { zoomSlider.disabled = true; }
+
+                        // Configure Flash Button
+                        const flashBtn = document.getElementById('btn-flash');
+                        flashBtn.disabled = !('torch' in capabilities);
+                    }
+                }
+            }, 500); // Wait for camera to fully load
+        }
+
+        function setZoom(val) {
+            if (track) { 
+                try { track.applyConstraints({ advanced: [{ zoom: val }] }); } 
+                catch (e) { console.warn("Zoom not supported", e); } 
+            }
+        }
+
+        let isTorchOn = false;
+        function toggleTorch() {
+            if (track) {
+                isTorchOn = !isTorchOn;
+                try {
+                    track.applyConstraints({ advanced: [{ torch: isTorchOn }] });
+                    const btn = document.getElementById('btn-flash');
+                    if(isTorchOn) {
+                        btn.classList.add('bg-yellow-500', 'text-black', 'border-yellow-400');
+                        btn.classList.remove('bg-zinc-800/80', 'text-white', 'border-zinc-600');
+                    } else {
+                        btn.classList.remove('bg-yellow-500', 'text-black', 'border-yellow-400');
+                        btn.classList.add('bg-zinc-800/80', 'text-white', 'border-zinc-600');
+                    }
+                } catch (e) { console.warn("Torch not supported", e); }
+            }
+        }
+
+        // --- FILE UPLOAD SCANNING ---
+        function handleFile(input) {
+            if (input.files.length === 0) return;
+            const fileReader = new Html5Qrcode("reader"); // Use separate instance or temp one
+            fileReader.scanFile(input.files[0], true)
+                .then(onScanSuccess)
+                .catch(() => {
+                    alert("فشل التحليل: الصورة لا تحتوي على رمز QR واضح أو الملف تالف.");
+                    speak("فشلت عملية تحليل الملف.");
+                });
+        }
+
+        // --- QR GENERATOR (V9 LOGIC) ---
+        function setGenType(type) {
+            genType = type;
+            const btnText = document.getElementById('btn-gen-text');
+            const btnWifi = document.getElementById('btn-gen-wifi');
+            
+            // Toggle UI
+            if(type === 'text') {
+                btnText.className = "flex-1 py-2 text-[10px] font-bold rounded-lg bg-red-600 text-white shadow-lg transition-all";
+                btnWifi.className = "flex-1 py-2 text-[10px] font-bold rounded-lg text-gray-400 hover:text-white transition-all";
+                document.getElementById('form-text').classList.remove('hidden');
+                document.getElementById('form-wifi').classList.add('hidden');
+            } else {
+                btnWifi.className = "flex-1 py-2 text-[10px] font-bold rounded-lg bg-red-600 text-white shadow-lg transition-all";
+                btnText.className = "flex-1 py-2 text-[10px] font-bold rounded-lg text-gray-400 hover:text-white transition-all";
+                document.getElementById('form-text').classList.add('hidden');
+                document.getElementById('form-wifi').classList.remove('hidden');
+            }
+            document.getElementById('gen-result').classList.add('hidden');
+        }
+
+        function generateQR() {
+            let data = "";
+            if (genType === 'text') {
+                data = document.getElementById('inp-text').value;
+                if(!data) return alert("خطأ: حقل النص فارغ.");
+            } else {
+                const ssid = document.getElementById('inp-ssid').value;
+                const pass = document.getElementById('inp-pass').value;
+                const enc = document.getElementById('inp-enc').value;
+                if(!ssid) return alert("خطأ: يجب إدخال اسم الشبكة (SSID).");
+                // Construct WiFi String
+                data = `WIFI:T:${enc};S:${ssid};P:${pass};;`;
+            }
+
+            const container = document.getElementById('qrcode-output');
+            container.innerHTML = ""; // Clear previous
+            
+            // Generate QR
+            new QRCode(container, {
+                text: data,
+                width: 200, // Slightly larger
+                height: 200,
+                colorDark : "#000000",
+                colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.H // High error correction
+            });
+            
+            document.getElementById('gen-result').classList.remove('hidden');
+            speak("تم تكوين الرمز المشفر.");
+        }
+
+        // --- DOWNLOAD & SHARING LOGIC (CRITICAL FIXES FROM V8.5) ---
+        
+        // 1. Safe Download (Handles both Canvas and IMG tags from library)
+        function downloadQRSafe() {
+            const container = document.getElementById("qrcode-output");
+            const originalImg = container.querySelector("img");
+            const canvas = container.querySelector("canvas");
+
+            if (canvas) {
+                // Prefer Canvas if available
+                downloadBlobFromDataURL(canvas.toDataURL("image/png"), 'QR_AboElfadl_Encrypted.png');
+                speak("جاري تنزيل الملف.");
+            } else if (originalImg && originalImg.src) {
+                // Fallback to IMG src
+                downloadBlobFromDataURL(originalImg.src, 'QR_AboElfadl_Encrypted.png');
+                speak("جاري تنزيل الملف.");
+            } else {
+                alert("يرجى الانتظار حتى يتم تكوين الرمز بالكامل.");
+            }
+        }
+
+        function downloadBlobFromDataURL(dataURL, filename) {
+            const link = document.createElement('a');
+            link.href = dataURL;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // 2. Share Image Evidence (Fixes Black Screen Issue)
+        async function shareImageEvidence() {
+            const element = document.getElementById('evidence-card');
+            
+            // html2canvas Config: useCORS and allowTaint are essential for external images/fonts
+            // backgroundColor sets the background explicitly to avoid transparency turning black in some viewers
+            try {
+                const canvas = await html2canvas(element, { 
+                    scale: 2, // High resolution
+                    useCORS: true, 
+                    allowTaint: true, 
+                    backgroundColor: "#080808" 
+                });
+                
+                const dataUrl = canvas.toDataURL("image/png");
+                const blob = await (await fetch(dataUrl)).blob();
+                const file = new File([blob], "Evidence_AboElfadl.png", { type: "image/png" });
+
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    await navigator.share({ files: [file] });
+                } else {
+                    // Fallback if sharing not supported
+                    downloadBlobFromDataURL(dataUrl, 'Evidence_AboElfadl.png');
+                }
+            } catch (e) {
+                console.error("Share failed", e);
+                alert("حدث خطأ أثناء المشاركة. سيتم تنزيل الصورة بدلاً من ذلك.");
+                // Emergency download
+                html2canvas(element).then(c => downloadBlobFromDataURL(c.toDataURL(), 'Evidence_Err.png'));
+            }
+        }
+
+        // 3. Share PDF Report
+        async function sharePDFReport() {
+            const element = document.getElementById('evidence-card');
+            const canvas = await html2canvas(element, { scale: 2, backgroundColor:'#080808', useCORS: true });
+            
+            const pdf = new jsPDF();
+            const imgData = canvas.toDataURL('image/png');
+            const imgProps = pdf.getImageProperties(imgData);
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+            
+            pdf.setFontSize(22); 
+            pdf.setTextColor(200, 0, 0); // Red Title
+            pdf.text("ABO-ELFADL SECURITY REPORT", 105, 20, null, null, "center");
+            
+            pdf.addImage(imgData, 'PNG', 0, 40, pdfWidth, pdfHeight);
+            pdf.save("Report_AboElfadl.pdf");
+            speak("تم تصدير التقرير.");
+        }
+
+        // --- UTILITY FUNCTIONS ---
+        function copyWifiPass() {
+            navigator.clipboard.writeText(document.getElementById('wifi-pass').innerText)
+                .then(() => {
+                    alert("تم نسخ كلمة المرور للحافظة.");
+                    speak("تم النسخ.");
+                })
+                .catch(() => alert("فشل النسخ تلقائياً."));
+        }
+
+        function checkVirusTotal() {
+            const url = document.getElementById('link-content').innerText;
+            // Clean URL for search
+            const searchUrl = `https://www.virustotal.com/gui/search/${encodeURIComponent(url)}`;
+            window.open(searchUrl, '_blank');
+        }
+
+        function resetApp() {
+            document.getElementById('report-panel').classList.add('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Strength Meter Logic
+        function calcStrength(p) {
+            // Rough estimation of entropy
+            const charsetSize = 
+                (p.match(/[a-z]/) ? 26 : 0) +
+                (p.match(/[A-Z]/) ? 26 : 0) +
+                (p.match(/[0-9]/) ? 10 : 0) +
+                (p.match(/[^a-zA-Z0-9]/) ? 32 : 0);
+                
+            const s = Math.pow(charsetSize || 1, p.length);
+            
+            let w = "10%", c = "bg-red-600", t = "WEAK (سهل الاختراق)";
+            
+            if (p.length >= 8 && charsetSize > 50) {
+                 w = "60%"; c = "bg-yellow-500"; t = "MODERATE (متوسط)";
+            }
+            if (p.length >= 12 && charsetSize > 70) {
+                w = "100%"; c = "bg-green-500"; t = "SECURE (قوي جداً)";
+            }
+
+            const bar = document.getElementById('strength-bar');
+            bar.style.width = w;
+            bar.className = `h-full ${c} transition-all duration-1000`;
+            document.getElementById('crack-time').innerText = t;
+        }
+
+    </script>
+</body>
+</html>
+
